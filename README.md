@@ -24,7 +24,7 @@ A powerful AI-powered documentation assistant that combines web crawling capabil
 - **Database**: Supabase
 - **AI/ML**:
   - OpenAI GPT-4 for summarization and chat
-  - DeepSeeker for embeddings and alternative model
+  - Alternative for another models i.e. DeepSeek for embeddings or local LLMs with Ollama
 - **Web Crawling**:
   - Async Web Crawler
   - XML Sitemap parsing
@@ -47,7 +47,7 @@ A powerful AI-powered documentation assistant that combines web crawling capabil
    OPENAI_API_KEY=your_key
    SUPABASE_URL=your_url
    SUPABASE_KEY=your_key
-   DEEPSEEKER_API_KEY=your_key
+   DEEPSEEK_API_KEY=your_key
    ```
 
 2. **Run the Application**:
