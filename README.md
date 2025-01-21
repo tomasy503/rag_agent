@@ -29,7 +29,7 @@ A powerful AI-powered documentation assistant that combines web crawling capabil
   - Async Web Crawler - [Crawl4AI](https://docs.crawl4ai.com/)
   - XML Sitemap parsing
 - **Other Tools**:
-  - Agentic Framword - [PydanticAI](https://ai.pydantic.dev/) 
+  - Agentic Framework - [PydanticAI](https://ai.pydantic.dev/) 
   - Python async/await for concurrent operations
   - Pydantic for data validation
   - Environment variables for configuration
