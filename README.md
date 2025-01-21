@@ -38,7 +38,7 @@ A powerful AI-powered documentation assistant that combines web crawling capabil
 1. **Setup Environment**:
    ```bash
    # Clone the repository
-   git clone [repository-url]
+   git clone https://github.com/tomasy503/rag_agent.git
    
    # Install dependencies
    pip install -r requirements.txt
