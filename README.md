@@ -26,9 +26,10 @@ A powerful AI-powered documentation assistant that combines web crawling capabil
   - OpenAI GPT-4 for summarization and chat
   - Alternative for another models i.e. DeepSeek for embeddings or local LLMs with Ollama
 - **Web Crawling**:
-  - Async Web Crawler
+  - Async Web Crawler - [Crawl4AI](https://docs.crawl4ai.com/)
   - XML Sitemap parsing
 - **Other Tools**:
+  - Agentic Framword - [PydanticAI](https://ai.pydantic.dev/) 
   - Python async/await for concurrent operations
   - Pydantic for data validation
   - Environment variables for configuration
