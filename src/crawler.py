@@ -228,7 +228,9 @@ class WebCrawler:
         insert_tasks = [self.insert_chunk(chunk) for chunk in processed_chunks]
         await asyncio.gather(*insert_tasks)
 
-    async def crawl_parallel(self, urls: List[str], max_concurrent: int = 5):
+    async def crawl_parallel(
+        self, urls: List[str], max_concurrent: int = 5, progress_callback=None
+    ):
         """Crawl multiple URLs in parallel with a concurrency limit."""
         browser_config = BrowserConfig(
             headless=True,
@@ -257,6 +259,10 @@ class WebCrawler:
                         )
                     else:
                         print(f"Failed: {url} - Error: {result.error_message}")
+
+                    # Call the progress callback if provided
+                    if progress_callback:
+                        progress_callback()
 
             # Process all URLs in parallel with limited concurrency
             await asyncio.gather(*[process_url(url) for url in urls])
