@@ -9,6 +9,10 @@ from typing import Literal, TypedDict
 import logfire
 import streamlit as st
 
+from agent import ExpertAgent, ExpertAgentDeps
+from crawler import WebCrawler
+
+
 # Load environment variables
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
@@ -29,9 +33,6 @@ from pydantic_ai.messages import (
 
 # from pydantic_ai.models.openai import OpenAIModel
 from supabase import Client
-
-from agent import ExpertAgent, ExpertAgentDeps
-from crawler import WebCrawler
 
 # Load environment variables
 load_dotenv()
