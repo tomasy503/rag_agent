@@ -6,37 +6,48 @@ import logging
 import os
 from typing import Literal, TypedDict
 
+import logfire
 import streamlit as st
+
+# Load environment variables
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
+
+# Import all the message part classes
 from pydantic_ai.messages import (
     ModelMessage,
     ModelMessagesTypeAdapter,
     ModelRequest,
     ModelResponse,
+    RetryPromptPart,
+    SystemPromptPart,
     TextPart,
+    ToolCallPart,
+    ToolReturnPart,
     UserPromptPart,
 )
-from src.agent import ExpertAgent, ExpertAgentDeps
-from src.crawler import WebCrawler
-from supabase import Client, create_client
 
-# Set up logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+# from pydantic_ai.models.openai import OpenAIModel
+from supabase import Client
+
+from agent import ExpertAgent, ExpertAgentDeps
+from crawler import WebCrawler
 
 # Load environment variables
 load_dotenv()
 
-# Initialize clients
-openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-supabase: Client = create_client(
-    os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY")
-)
 
-source_name = None
-# Initialize WebCrawler
-crawler = WebCrawler(supabase, source_name)
+# Initialize clients
+# client = OpenAIModel(
+#     api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com"
+# )
+
+openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+supabase: Client = Client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
+
+# Configure logfire to suppress warnings (optional)
+logfire.configure(send_to_logfire="if-token-present")
 
 
 class ChatMessage(TypedDict):
@@ -48,58 +59,55 @@ class ChatMessage(TypedDict):
 
 
 def display_message_part(part):
-    """Display a single part of a message in the Streamlit UI."""
+    """
+    Display a single part of a message in the Streamlit UI.
+    Customize how you display system prompts, user prompts,
+    tool calls, tool returns, etc.
+    """
+    # system-prompt
     if part.part_kind == "system-prompt":
         with st.chat_message("system"):
             st.markdown(f"**System**: {part.content}")
+    # user-prompt
     elif part.part_kind == "user-prompt":
         with st.chat_message("user"):
             st.markdown(part.content)
+    # text
     elif part.part_kind == "text":
         with st.chat_message("assistant"):
             st.markdown(part.content)
 
 
-def convert_message_history(messages):
-    """Convert message history to the correct format."""
-    converted = []
-    for msg in messages:
-        if isinstance(msg, (ModelRequest, ModelResponse)):
-            converted.append(msg)
-        elif isinstance(msg, dict):
-            if msg["role"] == "user":
-                converted.append(
-                    ModelRequest(parts=[UserPromptPart(content=msg["content"])])
-                )
-            else:
-                converted.append(
-                    ModelResponse(parts=[TextPart(content=msg["content"])])
-                )
-    return converted
-
-
-async def run_agent_with_streaming(user_input: str):
-    """Run the agent with streaming text for the user_input prompt."""
+async def run_agent_with_streaming(user_input: str, agent: Agent):
+    """
+    Run the agent with streaming text for the user_input prompt,
+    while maintaining the entire conversation in `st.session_state.messages`.
+    """
+    # Prepare dependencies
     deps = ExpertAgentDeps(
         supabase=supabase,
         openai_client=openai_client,
-        source_name=st.session_state.source_name,
     )
-    expert = ExpertAgent(st.session_state.source_name)
-    message_history = convert_message_history(st.session_state.messages[:-1])
 
-    async with expert.agent.run_stream(
+    # Run the agent in a stream
+    async with agent.run_stream(
         user_input,
         deps=deps,
-        message_history=message_history,
+        message_history=st.session_state.messages[
+            :-1
+        ],  # pass entire conversation so far
     ) as result:
+        # We'll gather partial text to show incrementally
         partial_text = ""
         message_placeholder = st.empty()
 
+        # Render partial text as it arrives
         async for chunk in result.stream_text(delta=True):
             partial_text += chunk
             message_placeholder.markdown(partial_text)
 
+        # Now that the stream is finished, we have a final result.
+        # Add new messages from this run, excluding user-prompt messages
         filtered_messages = [
             msg
             for msg in result.new_messages()
@@ -110,19 +118,22 @@ async def run_agent_with_streaming(user_input: str):
         ]
         st.session_state.messages.extend(filtered_messages)
 
+        # Add the final response to the messages
         st.session_state.messages.append(
             ModelResponse(parts=[TextPart(content=partial_text)])
         )
 
 
-async def crawl_website(sitemap_url: str, source_name: str):
+async def crawl_website(sitemap_url: str, source_name: str, crawler: WebCrawler):
     """Crawl a website using its sitemap URL."""
     try:
+        # Get URLs from sitemap
         urls = await crawler.get_sitemap_urls(sitemap_url)
         if urls:
             progress_text = "Crawling in progress..."
             progress_bar = st.progress(0, text=progress_text)
 
+            # Create a progress callback
             def update_progress(current: int, total: int, message: str):
                 progress = float(current) / float(total)
                 progress_bar.progress(progress, text=f"{message} ({current}/{total})")
@@ -151,13 +162,18 @@ async def crawl_website(sitemap_url: str, source_name: str):
 async def main():
     st.title("Pydantic AI Agentic RAG")
 
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+    # Initialize session state
     if "source_name" not in st.session_state:
         st.session_state.source_name = None
 
+    expert_agent = ExpertAgent(st.session_state.source_name)
+    agent = expert_agent.agent
+    crawler = WebCrawler(st.session_state.source_name)
+
+    # Create tabs for crawler and chat
     tab1, tab2 = st.tabs(["Web Crawler", "Chat"])
 
+    # Crawler Tab
     with tab1:
         st.header("Web Crawler")
         sitemap_url = st.text_input("Enter sitemap URL:")
@@ -165,10 +181,11 @@ async def main():
 
         if st.button("Start Crawling") and sitemap_url and source_name:
             st.session_state.source_name = source_name
-            success = await crawl_website(sitemap_url, source_name)
+            success = await crawl_website(sitemap_url, source_name, crawler)
             if success:
                 st.session_state.messages = []  # Reset chat history for new source
 
+    # Chat Tab
     with tab2:
         st.header("Chat Interface")
 
@@ -176,30 +193,37 @@ async def main():
             st.warning("Please crawl a documentation site first in the Crawler tab.")
             return
 
+        # Initialize chat history in session state if not present
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
+
+        # Display all messages from the conversation so far
+        # Each message is either a ModelRequest or ModelResponse.
+        # We iterate over their parts to decide how to display them.
         for msg in st.session_state.messages:
-            if isinstance(msg, (ModelRequest, ModelResponse)):
+            if isinstance(msg, ModelRequest) or isinstance(msg, ModelResponse):
                 for part in msg.parts:
                     display_message_part(part)
-            elif isinstance(msg, dict):
-                role = msg.get("role", "assistant")
-                content = msg.get("content", "")
-                with st.chat_message(role):
-                    st.markdown(content)
 
-        # Move the chat input field below the messages
+        # Chat input for the user
         user_input = st.chat_input(
-            f"Ask questions about {st.session_state.source_name}"
+            "What questions do you have about the documentation?"
         )
 
         if user_input:
+            # We append a new request to the conversation explicitly
             st.session_state.messages.append(
                 ModelRequest(parts=[UserPromptPart(content=user_input)])
             )
 
+            # Display user prompt in the UI
             with st.chat_message("user"):
                 st.markdown(user_input)
 
-            await run_agent_with_streaming(user_input)
+            # Display the assistant's partial response while streaming
+            with st.chat_message("assistant"):
+                # Actually run the agent now, streaming the text
+                await run_agent_with_streaming(user_input, agent)
 
 
 if __name__ == "__main__":

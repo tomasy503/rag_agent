@@ -20,6 +20,7 @@ load_dotenv()
 
 # Initialize OpenAI and Supabase clients
 openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 supabase: Client = create_client(
     os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY")
 )
@@ -37,15 +38,12 @@ class ProcessedChunk:
 
 
 class WebCrawler:
-    def __init__(self, supabase_client: Client, source_name: str):
+    def __init__(self, source_name: str):
         self.source_name = source_name
-        self.supabase = supabase_client
-        self.browser_config = BrowserConfig(
-            headless=True,
-            verbose=False,
-            extra_args=["--disable-gpu", "--disable-dev-shm-usage", "--no-sandbox"],
-        )
-        self.crawl_config = CrawlerRunConfig(cache_mode=CacheMode.BYPASS)
+
+    def update_source_name(self, new_source_name: str):
+        """Update the source name dynamically."""
+        self.source_name = new_source_name
 
     async def get_sitemap_urls(self, url: str) -> List[str]:
         """Get URLs from a sitemap."""
@@ -197,6 +195,7 @@ class WebCrawler:
 
             result = supabase.table("site_pages").insert(data).execute()
             print(f"Inserted chunk {chunk.chunk_number} for {chunk.url}")
+            print("Insert result:", result.data)  # Log the result of the insertion
             return result
         except Exception as e:
             print(f"Error inserting chunk: {e}")
@@ -221,9 +220,6 @@ class WebCrawler:
         tasks = [self.process_chunk(chunk, i, url) for i, chunk in enumerate(chunks)]
         processed_chunks = await asyncio.gather(*tasks)
 
-        # truncate table if it exists
-        await self.clear_table()
-
         # Store chunks in parallel
         insert_tasks = [self.insert_chunk(chunk) for chunk in processed_chunks]
         await asyncio.gather(*insert_tasks)
@@ -238,6 +234,9 @@ class WebCrawler:
             extra_args=["--disable-gpu", "--disable-dev-shm-usage", "--no-sandbox"],
         )
         crawl_config = CrawlerRunConfig(cache_mode=CacheMode.BYPASS)
+
+        # Clear the table at the start of a new crawl session
+        await self.clear_table()
 
         # Create the crawler instance
         crawler = AsyncWebCrawler(config=browser_config)
