@@ -1,6 +1,6 @@
-# Pydantic AI Agentic RAG
+# Agentic RAG using PydanticAI Framework and Crawl4AI
 
-A powerful AI-powered documentation assistant that combines web crawling capabilities with advanced RAG (Retrieval-Augmented Generation) to provide accurate and context-aware responses to your questions.
+A powerful AI-powered assistant that combines web crawling capabilities with advanced RAG (Retrieval-Augmented Generation) to provide accurate and context-aware responses to your questions from an entire content of a domain.
 
 ## Features
 
@@ -37,36 +37,27 @@ A powerful AI-powered documentation assistant that combines web crawling capabil
 ## Usage
 
 1. **Setup Environment**:
-   ```bash
-   # Clone the repository
-   git clone https://github.com/tomasy503/rag_agent.git
-   
-   # Install dependencies
-   pip install -r requirements.txt
-   
-   # Set up environment variables in .env file
-   OPENAI_API_KEY=your_key
-   SUPABASE_URL=your_url
-   SUPABASE_KEY=your_key
-   DEEPSEEK_API_KEY=your_key
-   ```
+   - Ensure you have Python installed on your system.
+   - Use the `pyproject.toml` file to set up dependencies with Poetry:
+     ```bash
+     poetry install
+     ```
 
-2. **Run the Application**:
-   ```bash
-   streamlit run app.py
-   ```
+2. **Running the Application**:
+   - Make sure the website you want to crawl is the home site and has a `sitemap.xml` file available.
+   - This RAG System extracts all websites from a domain.
+   - Start the application using:
+     ```bash
+     streamlit run app.py
+     ```
 
-3. **Using the Application**:
-   - **Crawl Documentation**:
-     1. Go to the "Web Crawler" tab
-     2. Enter the sitemap URL of the documentation
-     3. Provide a source name (e.g., 'pydantic_docs')
-     4. Click "Start Crawling"
-   
-   - **Chat with the Assistant**:
-     1. Switch to the "Chat" tab
-     2. Ask questions about the crawled documentation
-     3. Receive context-aware responses based on the documentation
+3. **Web Crawling**:
+   - Enter the domain URL and source name in the "Web Crawler" tab.
+   - Click "Start Crawling" to begin the process.
+
+4. **Chat Interface**:
+   - Use the "Chat" tab to interact with the AI assistant.
+   - Ask questions about the documentation, and receive context-aware responses.
 
 ## Project Structure
 
@@ -74,8 +65,11 @@ A powerful AI-powered documentation assistant that combines web crawling capabil
 - `src/`
   - `agent.py`: Expert agent implementation
   - `crawler.py`: Web crawler and document processor
-  - `models/`: Model implementations
+  - `site_pages.sql`: SQL file for creating the main table to store the knowledge from the domain
 
 ## Requirements
 
-See `requirements.txt` for a complete list of dependencies.
+Dependencies are managed through the `pyproject.toml` file using Poetry. To install them, run:
+```bash
+poetry install
+```
