@@ -197,6 +197,7 @@ class WebCrawler:
 
             result = supabase.table("site_pages").insert(data).execute()
             print(f"Inserted chunk {chunk.chunk_number} for {chunk.url}")
+            print("Insert result:", result.data)  # Log the result of the insertion
             return result
         except Exception as e:
             print(f"Error inserting chunk: {e}")
@@ -221,9 +222,6 @@ class WebCrawler:
         tasks = [self.process_chunk(chunk, i, url) for i, chunk in enumerate(chunks)]
         processed_chunks = await asyncio.gather(*tasks)
 
-        # truncate table if it exists
-        await self.clear_table()
-
         # Store chunks in parallel
         insert_tasks = [self.insert_chunk(chunk) for chunk in processed_chunks]
         await asyncio.gather(*insert_tasks)
@@ -238,6 +236,9 @@ class WebCrawler:
             extra_args=["--disable-gpu", "--disable-dev-shm-usage", "--no-sandbox"],
         )
         crawl_config = CrawlerRunConfig(cache_mode=CacheMode.BYPASS)
+
+        # Clear the table at the start of a new crawl session
+        await self.clear_table()
 
         # Create the crawler instance
         crawler = AsyncWebCrawler(config=browser_config)
