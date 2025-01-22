@@ -55,10 +55,6 @@ class ExpertAgent:
             ],
         )
 
-    def update_source_name(self, new_source_name: str):
-        """Update the source name dynamically."""
-        self.source_name = new_source_name
-
     async def get_embedding(self, text: str, openai_client: AsyncOpenAI) -> List[float]:
         """Get embedding vector from OpenAI."""
         try:

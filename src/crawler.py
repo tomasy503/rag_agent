@@ -41,10 +41,6 @@ class WebCrawler:
     def __init__(self, source_name: str):
         self.source_name = source_name
 
-    def update_source_name(self, new_source_name: str):
-        """Update the source name dynamically."""
-        self.source_name = new_source_name
-
     async def get_sitemap_urls(self, url: str) -> List[str]:
         """Get URLs from a sitemap."""
         sitemap_url = f"{url}/sitemap.xml"
