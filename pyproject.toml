@@ -1,7 +1,8 @@
 [project]
 name = "agent"
 version = "0.1.0"
-description = "Backend configuration for Agentic RAG"
+
+description = "Agentic RAG using PydanticAI Framework and Crawl4AI"
 authors = [
     {name = "Tomas Yanez",email = "tomas.yanez86@gmail.com"}
 ]
