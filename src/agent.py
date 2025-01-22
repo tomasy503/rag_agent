@@ -1,16 +1,12 @@
 from __future__ import annotations as _annotations
 
-import asyncio
 import os
 from dataclasses import dataclass
 from typing import List
 
-import httpx
-
-# import logfire
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
-from pydantic_ai import Agent, ModelRetry, RunContext
+from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.openai import OpenAIModel
 from supabase import Client
 
@@ -18,8 +14,6 @@ load_dotenv()
 
 llm = os.getenv("LLM_MODEL", "gpt-4o-mini")
 model = OpenAIModel(llm)
-
-# logfire.configure(send_to_logfire="if-token-present")
 
 
 @dataclass
@@ -32,7 +26,7 @@ class ExpertAgentDeps:
 class ExpertAgent:
     def __init__(self, source_name: str):
         self.source_name = source_name
-        system_prompt = """
+        system_prompt = f"""
         You are an expert at {source_name} - you have access to all the documentation,
         including examples, an API reference, and other resources to help answer relevant questions.
 
