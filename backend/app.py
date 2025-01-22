@@ -17,10 +17,9 @@ from pydantic_ai.messages import (
     TextPart,
     UserPromptPart,
 )
-from supabase import Client, create_client
-
 from src.agent import ExpertAgent, ExpertAgentDeps
 from src.crawler import WebCrawler
+from supabase import Client, create_client
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -124,21 +123,30 @@ async def crawl_website(sitemap_url: str, source_name: str):
             progress_text = "Crawling in progress..."
             progress_bar = st.progress(0, text=progress_text)
 
-            def update_progress(current: int, total: int, message: str):
-                progress = float(current) / float(total)
-                progress_bar.progress(progress, text=f"{message} ({current}/{total})")
-
             total_urls = len(urls)
 
-            def update_progress_callback():
-                nonlocal current
-                current += 1
-                update_progress(current, total_urls, progress_text)
+            # Create a semaphore to limit concurrency
+            semaphore = asyncio.Semaphore(5)  # Adjust the concurrency limit as needed
 
-            current = 0
-            await crawler.crawl_parallel(
-                urls, progress_callback=update_progress_callback
-            )
+            async def process_url(url: str, index: int):
+                async with semaphore:
+                    result = await crawler.arun(
+                        url=url, config=crawl_config, session_id="session1"
+                    )
+                    if result.success:
+                        await crawler.process_and_store_document(
+                            url, result.markdown_v2.raw_markdown
+                        )
+                        progress_bar.progress(
+                            (index + 1) / total_urls,
+                            text=f"Crawling in progress... ({index + 1}/{total_urls})",
+                        )
+                    else:
+                        print(f"Failed: {url} - Error: {result.error_message}")
+
+            # Process all URLs in parallel with limited concurrency
+            await asyncio.gather(*[process_url(url, i) for i, url in enumerate(urls)])
+            progress_bar.progress(1.0, text="Crawling completed!")
             st.success(f"Successfully crawled and stored content for {source_name}")
             return True
         else:

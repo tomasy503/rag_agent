@@ -268,3 +268,7 @@ class WebCrawler:
             await asyncio.gather(*[process_url(url) for url in urls])
         finally:
             await crawler.close()
+
+    def crawl(self, urls: List[str]):
+        """Crawl multiple URLs."""
+        self.crawl_parallel(urls)
