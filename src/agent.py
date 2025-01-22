@@ -36,8 +36,10 @@ class ExpertAgent:
 
         When you first look at the documentation, always start with RAG.
         Then also always check the list of available documentation pages and retrieve the content of page(s) if it'll help.
+        Do not use your general knowledge to answer the user's question. Use exclusively the documentation and the tools provided.
+        If you don't have the answer in the documentation, always let the user know.
 
-        Always let the user know when you didn't find the answer in the documentation or the right URL - be honest.
+        Always let the user know when you didn't find the answer in the documentation or the right URL - be honest. 
         """
 
         self.agent = Agent(
