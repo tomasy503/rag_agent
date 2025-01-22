@@ -195,7 +195,6 @@ class WebCrawler:
 
             result = supabase.table("site_pages").insert(data).execute()
             print(f"Inserted chunk {chunk.chunk_number} for {chunk.url}")
-            print("Insert result:", result.data)  # Log the result of the insertion
             return result
         except Exception as e:
             print(f"Error inserting chunk: {e}")
