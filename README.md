@@ -41,9 +41,20 @@ A powerful AI-powered assistant that combines web crawling capabilities with adv
    - Use the `pyproject.toml` file to set up dependencies with Poetry:
      ```bash
      poetry install
+     poetry shell #this will activate the virtual environment
      ```
 
-2. **Running the Application**:
+2. Set up environment variables:
+   - Rename `.env.example` to `.env`
+   - Edit `.env` with your API keys and preferences:
+   ```env
+   OPENAI_API_KEY=your_openai_api_key
+   SUPABASE_URL=your_supabase_url
+   SUPABASE_SERVICE_KEY=your_supabase_service_key
+   LLM_MODEL=gpt-4o-mini  # or your preferred OpenAI model
+   ```
+
+3. **Running the Application**:
    - Make sure the website you want to crawl is the home site and has a `sitemap.xml` file available.
    - This RAG System extracts all websites from a domain.
    - Start the application using:
