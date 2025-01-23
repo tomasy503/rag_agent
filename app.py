@@ -159,6 +159,10 @@ async def crawl_website(sitemap_url: str, source_name: str, crawler: WebCrawler)
         return False
 
 
+def update_source_name(source_name: str):
+    st.session_state.source_name = source_name
+
+
 async def main():
     st.title("Pydantic AI Agentic RAG")
 
@@ -178,6 +182,9 @@ async def main():
         st.header("Web Crawler")
         sitemap_url = st.text_input("Enter sitemap URL:")
         source_name = st.text_input("Enter source name (e.g., 'pydantic_ai_docs'):")
+
+        if source_name:
+            update_source_name(source_name)
 
         if st.button("Start Crawling") and sitemap_url and source_name:
             st.session_state.source_name = source_name
